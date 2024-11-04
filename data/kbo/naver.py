@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 
 from typing import Dict, Literal
-from enum import Enum
 from datetime import datetime
 from uuid import uuid4
 
@@ -16,7 +15,8 @@ class NaverGame:
         self.id = self._generate_game_id(home_team, away_team, date)
         pass
 
-    def _generate_game_id(self, home_team, away_team, date: datetime) -> str:
+    @staticmethod
+    def _generate_game_id(home_team, away_team, date: datetime) -> str:
         return f"{date.strftime('%Y%m%d')}{home_team}{away_team}0{date.year}"
 
     def _request_game_logs(self, inning: int):
@@ -52,30 +52,35 @@ class NaverGame:
             total_logs.append(game_log)
 
         return sum(total_logs, [])
-
-
-# def request_player_stats(home_team, away_team, date: datetime, inning: int):
-#     header = {
-#         "Accept": "*/*",
-#         "Accept-Encoding": "gzip, deflate, br",
-#         "Connection": "keep-alive",
-#         "authority": "api-gw.sports.naver.com",
-#         "Origin": "https://m.sports.naver.com",
-#         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
-#     }
-#     gid = generate_game_id(home_team, away_team, date)
-#     url = f"{KBO_NAVER_LOGS_URL}/{gid}/relay"
-
-#     param = {'inning': inning}
-#     resp = requests.get(url, params=param, headers=header)
-
-#     if resp.status_code == 200:
-#         jstr = resp.json()
-
-#         return jstr['result']
     
-#     else:
-#         RuntimeError(resp.status_code)
+    def exec(self):
+        # TODO: Insert inning log parser.
+        # TODO: Find out which of the 'home' or 'away' starts first
+        ...
+
+
+def request_player_stats(home_team, away_team, date: datetime, inning: int):
+    header = {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "authority": "api-gw.sports.naver.com",
+        "Origin": "https://m.sports.naver.com",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    }
+    gid = f"{date.strftime('%Y%m%d')}{home_team}{away_team}0{date.year}"
+    url = f"{KBO_NAVER_LOGS_URL}/{gid}/relay"
+
+    param = {'inning': inning}
+    resp = requests.get(url, params=param, headers=header)
+
+    if resp.status_code == 200:
+        jstr = resp.json()
+
+        return jstr['result']
+    
+    else:
+        RuntimeError(resp.status_code)
 
 
 

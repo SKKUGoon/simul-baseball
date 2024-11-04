@@ -2,14 +2,15 @@
 CREATE TABLE baseball.teams (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    statiz_id INTEGER UNIQUE
+    two_letter_name VARCHAR(10) UNIQUE
 );
 
 -- Create the 'players' table
 CREATE TABLE baseball.players (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    statiz_id INTEGER UNIQUE
+    statiz_id INTEGER UNIQUE,
+    naver_id VARCHAR UNIQUE
 );
 
 -- Create the 'player_roles' table
