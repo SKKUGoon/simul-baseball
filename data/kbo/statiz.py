@@ -34,7 +34,7 @@ def parse_team_member(htmls: str):
         # Extract player name and ID from the anchor tag
         player_name = item.text.strip()
         player_id = item['href'].split('p_no=')[-1]  # Extract the player ID from the URL
-        players.append({'player_id': player_id, 'player_name': player_name})
+        players.append({'statiz_id': player_id, 'player_name': player_name})
 
     # Convert the list of players to a pandas DataFrame
     df_players = pd.DataFrame(players)

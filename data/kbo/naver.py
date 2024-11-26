@@ -10,14 +10,55 @@ from uuid import uuid4
 KBO_NAVER_LOGS_URL = "https://api-gw.sports.naver.com/schedule/games"
 
 
-class NaverGame:
+def generate_game_id(home_team, away_team, date: datetime) -> str:
+    return f"{date.strftime('%Y%m%d')}{home_team}{away_team}0{date.year}"
+
+
+class NaverPlayerId:
     def __init__(self, home_team, away_team, date: datetime) -> None:
-        self.id = self._generate_game_id(home_team, away_team, date)
-        pass
+        self.id = generate_game_id(home_team, away_team, date)
+
+    def request_player_id(self):
+        header = {
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "authority": "api-gw.sports.naver.com",
+            "Origin": "https://m.sports.naver.com",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+        }
+        url = f"{KBO_NAVER_LOGS_URL}/{self.id}/relay"
+
+        param = {'inning': 1}
+        resp = requests.get(url, params=param, headers=header)
+        if resp.status_code == 200:
+            jstr = resp.json()
+
+            return self.extract_player_id(jstr['result'], "home")  # Always go for home
+
+        else:
+            RuntimeError(resp.status_code)
 
     @staticmethod
-    def _generate_game_id(home_team, away_team, date: datetime) -> str:
-        return f"{date.strftime('%Y%m%d')}{home_team}{away_team}0{date.year}"
+    def extract_player_id(data: Dict, home_or_away: Literal["home", "away"]):
+        if home_or_away == "home":
+            pitcher = [[i[k] for k in ['name', 'pcode']] 
+                       for i in data['textRelayData']['homeLineup']['pitcher']]
+            batter = [[i[k] for k in ['name', 'pcode']] 
+                      for i in data['textRelayData']['homeLineup']['batter']]
+            return pd.DataFrame(pitcher + batter, columns=['player_name', 'naver_id'])
+        else:
+            pitcher = [[i[k] for k in ['name', 'pcode']] 
+                       for i in data['textRelayData']['awayLineup']['pitcher']]
+            batter = [[i[k] for k in ['name', 'pcode']] 
+                      for i in data['textRelayData']['awayLineup']['batter']]
+            return pd.DataFrame(pitcher + batter, columns=['player_name', 'naver_id'])
+
+
+
+class NaverGame:
+    def __init__(self, home_team, away_team, date: datetime) -> None:
+        self.id = generate_game_id(home_team, away_team, date)
 
     def _request_game_logs(self, inning: int):
         header = {
@@ -57,31 +98,6 @@ class NaverGame:
         # TODO: Insert inning log parser.
         # TODO: Find out which of the 'home' or 'away' starts first
         ...
-
-
-def request_player_stats(home_team, away_team, date: datetime, inning: int):
-    header = {
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "authority": "api-gw.sports.naver.com",
-        "Origin": "https://m.sports.naver.com",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
-    }
-    gid = f"{date.strftime('%Y%m%d')}{home_team}{away_team}0{date.year}"
-    url = f"{KBO_NAVER_LOGS_URL}/{gid}/relay"
-
-    param = {'inning': inning}
-    resp = requests.get(url, params=param, headers=header)
-
-    if resp.status_code == 200:
-        jstr = resp.json()
-
-        return jstr['result']
-    
-    else:
-        RuntimeError(resp.status_code)
-
 
 
 class NaverGameLogParser:
